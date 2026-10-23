@@ -277,35 +277,34 @@ def build_training_table(
     return table, stats
 
 
-if __name__ == "__main__":
 
-    DELAY_PATH  = "output/delay_differences.csv"
-    PARAMS_PATH = "output/random_orbital_parameters.csv"
-    OUT_PATH    = "output/training_table_padded.csv"
+DELAY_PATH  = "output/delay_differences.csv"
+PARAMS_PATH = "output/random_orbital_parameters.csv"
+OUT_PATH    = "output/training_table_padded.csv"
 
-    for p in (DELAY_PATH, PARAMS_PATH):
-        if not os.path.exists(p):
-            raise SystemExit(f"Required file not found: {p}")
+for p in (DELAY_PATH, PARAMS_PATH):
+    if not os.path.exists(p):
+        raise SystemExit(f"Required file not found: {p}")
 
-    table, stats = build_training_table(DELAY_PATH, PARAMS_PATH)
+table, stats = build_training_table(DELAY_PATH, PARAMS_PATH)
 
-    print(f"Loaded {stats['n_total']} satellites from {DELAY_PATH}")
-    print(f"  dropped {stats['n_no_pass']:5d} with no pass at all")
-    print(f"  dropped {stats['n_non_contig']:5d} flagged non-contiguous")
-    print(f"  dropped {stats['n_too_short']:5d} with fewer than {MIN_REAL_SAMPLES} real samples")
-    print(f"  dropped {stats['n_no_crossing']:5d} with no zero crossing found")
-    print(f"  {stats['n_final']} satellites remain in the training table\n")
+print(f"Loaded {stats['n_total']} satellites from {DELAY_PATH}")
+print(f"  dropped {stats['n_no_pass']:5d} with no pass at all")
+print(f"  dropped {stats['n_non_contig']:5d} flagged non-contiguous")
+print(f"  dropped {stats['n_too_short']:5d} with fewer than {MIN_REAL_SAMPLES} real samples")
+print(f"  dropped {stats['n_no_crossing']:5d} with no zero crossing found")
+print(f"  {stats['n_final']} satellites remain in the training table\n")
 
-    print(f"K_before = {stats['K_before']}  (crossing sits at column index {stats['K_before']-1})")
-    print(f"K_after  = {stats['K_after']}")
-    print(f"L        = {stats['L']}  (total rr_c_* / mask_* columns)\n")
+print(f"K_before = {stats['K_before']}  (crossing sits at column index {stats['K_before']-1})")
+print(f"K_after  = {stats['K_after']}")
+print(f"L        = {stats['L']}  (total rr_c_* / mask_* columns)\n")
 
-    label_cols = [c for c in table.columns if c.startswith("label_")]
-    print(f"Labels ({len(label_cols)}): {label_cols}")
+label_cols = [c for c in table.columns if c.startswith("label_")]
+print(f"Labels ({len(label_cols)}): {label_cols}")
 
-    real_fraction = table[[c for c in table.columns if c.startswith("mask_")]].mean().mean()
-    print(f"Mean fraction of real (non-padded) samples per row: {real_fraction:.1%}")
+real_fraction = table[[c for c in table.columns if c.startswith("mask_")]].mean().mean()
+print(f"Mean fraction of real (non-padded) samples per row: {real_fraction:.1%}")
 
-    os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
-    table.to_csv(OUT_PATH, index=False)
-    print(f"\nTraining table saved to {OUT_PATH}")
+os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
+table.to_csv(OUT_PATH, index=False)
+print(f"\nTraining table saved to {OUT_PATH}")

@@ -391,25 +391,24 @@ def generate_random_params(
               "(Risk G1) - rv_to_coe is unaffected, it does not depend on it.")
 
 
-if __name__ == "__main__":
-    import argparse
+import argparse
 
-    ap = argparse.ArgumentParser(description="Generate constructive LEO orbit parameters.")
-    ap.add_argument("--sigma", type=float, default=RANGE_RATE_ERROR_MS,
-                    help="1-sigma range-rate noise [m/s] written to the params CSV (default 0.0 = clean)")
-    ap.add_argument("--out-dir", default="output",
-                    help="folder for the two CSVs (default 'output', relative to the current directory)")
-    ap.add_argument("--n-samples", type=int, default=500)
-    ap.add_argument("--seed", type=int, default=42)
-    args = ap.parse_args()
+ap = argparse.ArgumentParser(description="Generate constructive LEO orbit parameters.")
+ap.add_argument("--sigma", type=float, default=RANGE_RATE_ERROR_MS,
+                help="1-sigma range-rate noise [m/s] written to the params CSV (default 0.0 = clean)")
+ap.add_argument("--out-dir", default="output",
+                help="folder for the two CSVs (default 'output', relative to the current directory)")
+ap.add_argument("--n-samples", type=int, default=500)
+ap.add_argument("--seed", type=int, default=42)
+args = ap.parse_args()
 
-    if args.sigma < 0:
-        ap.error("--sigma must be >= 0")
+if args.sigma < 0:
+    ap.error("--sigma must be >= 0")
 
-    generate_random_params(
-        n_samples=args.n_samples,
-        params_path=os.path.join(args.out_dir, "random_orbital_parameters.csv"),
-        states_path=os.path.join(args.out_dir, "initial_state_vectors.csv"),
-        seed=args.seed,
-        range_rate_error_ms=args.sigma,
-    )
+generate_random_params(
+    n_samples=args.n_samples,
+    params_path=os.path.join(args.out_dir, "random_orbital_parameters.csv"),
+    states_path=os.path.join(args.out_dir, "initial_state_vectors.csv"),
+    seed=args.seed,
+    range_rate_error_ms=args.sigma,
+)

@@ -5,8 +5,8 @@
 # PURPOSE
 # -------
 # Reads output/test_predictions_v3.csv (held-out test set, per satellite,
-# written by forest_trainer_v3.py) and output/model_results_v3.csv (for the
-# R2/RMSE/circ_skill annotations, so nothing is recomputed here) and draws
+# written by forest_testing.py) and output/test_results_v3.csv (for the
+# R2/RMSE/circ_corr annotations, so nothing is recomputed here) and draws
 # one 6-panel figure, one panel per label.
 #
 # WHY THE CIRCULAR LABELS ARE NOT PLOTTED THE SAME WAY AS THE LINEAR ONES
@@ -30,7 +30,7 @@
 # ------
 # 2 rows x 3 columns: top row sma/ecc/inc (pred vs true), bottom row
 # raan/argp/anom (wrapped error vs true). Both models overlaid per panel,
-# colour-coded, with R2 (linear) or circ_skill (circular) annotated per
+# colour-coded, with R2 (linear) or circ_corr (circular) annotated per
 # model directly in the panel.
 # =============================================================================
 
@@ -116,9 +116,9 @@ def plot_circular_panel(ax, preds, results, target):
         r = results[(results["target"] == target) & (results["model"] == model_name)
                      & (results["method"] == "single_split")]
         if not r.empty:
-            rmse, skill = r.iloc[0]["rmse"], r.iloc[0]["circ_skill"]
+            rmse, corr = r.iloc[0]["rmse"], r.iloc[0]["circ_corr"]
             _annotate(ax, model_name,
-                      f"{MODEL_LABELS[model_name]}: circRMSE={rmse:.1f}deg, skill={skill:.2f}", slot)
+                      f"{MODEL_LABELS[model_name]}: circRMSE={rmse:.1f}deg, corr={corr:.2f}", slot)
 
     ax.axhline(0, linestyle="--", color="gray", linewidth=1, zorder=0)
     ax.set_xlim(0, 360)
@@ -130,17 +130,19 @@ def plot_circular_panel(ax, preds, results, target):
 
 
 def make_figure(predictions_path="output/test_predictions_v3.csv",
-                 results_path="output/model_results_v3.csv",
+                 results_path="output/test_results_v3.csv",
                  out_path="output/predicted_vs_true.png"):
     # Draws whichever models appear in predictions_path (the trees by
     # default; cnn_trainer_v3.py calls this with its own files to produce a
     # separate, identically laid-out figure for the CNN).
     for p in (predictions_path, results_path):
         if not os.path.exists(p):
-            raise SystemExit(f"Required file not found: {p}\nRun forest_trainer_v3.py first.")
+            raise SystemExit(f"Required file not found: {p}\nRun forest_trainer_v3.py and forest_testing.py first.")
 
     preds = pd.read_csv(predictions_path)
     results = pd.read_csv(results_path)
+    if "method" not in results.columns:   # test_results_v3.csv holds test rows only
+        results["method"] = "single_split"
 
     fig, axes = plt.subplots(2, 3, figsize=(15, 9))
     fig.suptitle("Held-out test set: predicted vs true (top) / wrapped error vs true (bottom)")

@@ -193,7 +193,6 @@ from orbdetpy import (configure, add_station, MeasurementType, Frame, PositionAn
 from orbdetpy.conversion import (get_J2000_epoch_offset, get_UTC_string, elem_to_pv,
                                   lla_to_pos, transform_frame)
 from orbdetpy.propagation import propagate_orbits
-import matplotlib.pyplot as plt
 import math
 import csv
 import os
@@ -361,231 +360,169 @@ def simulate_doppler_pass(
 # =============================================================================
 # Example usage
 # =============================================================================
-if __name__ == "__main__":
 
-    # Set to a small number (e.g. 20) to smoke-test the run before committing
-    # to the full ~2.4 hr batch. None = process every satellite in the file.
-    TEST_LIMIT = None
+# Set to a small number (e.g. 20) to smoke-test the run before committing
+# to the full ~2.4 hr batch. None = process every satellite in the file.
+TEST_LIMIT = None
 
-    params_in_path = "output/random_orbital_parameters.csv"
-    if not os.path.exists(params_in_path):
-        raise SystemExit(
-            f"Parameter file not found: {params_in_path}\n"
-            "Run generate_params.py first to create it."
-        )
-
-    sma_vec, ecc_vec, inc_vec = [], [], []
-    raan_vec, argp_vec, anom_vec = [], [], []
-    epoch_offset_vec = []
-    with open(params_in_path, newline="") as f:
-        reader = csv.DictReader(f)
-        rows = list(reader)
-        if TEST_LIMIT is not None:
-            rows = rows[:TEST_LIMIT]
-        for row in rows:
-            sma_vec.append(float(row["sma_m"]))
-            ecc_vec.append(float(row["ecc"]))
-            inc_vec.append(float(row["inc_rad"]))
-            raan_vec.append(float(row["raan_rad"]))
-            argp_vec.append(float(row["argp_rad"]))
-            anom_vec.append(float(row["anom_rad"]))
-            epoch_offset_vec.append(float(row["epoch_offset_s"]))
-
-    if not rows:
-        raise SystemExit(f"No satellites found in {params_in_path}.")
-
-    # Station and timing settings are identical across rows (the generator
-    # writes them as constants), so take them from the first row.
-    first = rows[0]
-    STATION_NAME = first["station_name"]
-    STATION_LAT  = float(first["station_lat_rad"])
-    STATION_LON  = float(first["station_lon_rad"])
-    STATION_ALT  = float(first["station_alt_m"])
-    DELTA_T      = float(first["delta_t_s"])
-    CADENCE_S    = float(first["cadence_s"])
-    RANGE_RATE_ERROR_MS = float(first["range_rate_error_ms"])
-    SEARCH_WINDOW_S = float(first["search_window_s"])   # was hardcoded 80*60; now per-batch from the file
-
-    # Fixed calendar reference epoch_offset_s is measured from. NOT in the
-    # CSV -- must match generate_params.py's EPOCH_STR by convention.
-    EPOCH_BASE_STR = "2019-05-01T00:00:00"
-
-    c_light = 299792458.0
-
-    n_sats_in = len(sma_vec)
-    print(f"Loaded {len(rows)} satellites from {params_in_path}")
-    if TEST_LIMIT is not None:
-        print(f"  [TEST_LIMIT active: only the first {TEST_LIMIT} will be run]")
-
-    print(f"\n=== SIMULATION STARTED === ({n_sats_in} satellites)")
-    t_start = time.time()
-
-    results = simulate_doppler_pass(
-        sma_vec, ecc_vec, inc_vec, raan_vec, argp_vec, anom_vec,
-        epoch_offset_vec=epoch_offset_vec,
-        epoch_base_str=EPOCH_BASE_STR,
-        station_name=STATION_NAME,
-        station_lat=STATION_LAT,
-        station_lon=STATION_LON,
-        station_alt=STATION_ALT,
-        range_rate_error_ms=RANGE_RATE_ERROR_MS,
-        cadence_s=CADENCE_S,
-        search_window_s=SEARCH_WINDOW_S,
-        delta_t=DELTA_T,
+params_in_path = "output/random_orbital_parameters.csv"
+if not os.path.exists(params_in_path):
+    raise SystemExit(
+        f"Parameter file not found: {params_in_path}\n"
+        "Run generate_params.py first to create it."
     )
 
-    t_elapsed = time.time() - t_start
-    print(f"=== SIMULATION FINISHED === "
-          f"{t_elapsed:.1f} s ({t_elapsed/60:.2f} min, {t_elapsed/3600:.2f} hr)\n")
+sma_vec, ecc_vec, inc_vec = [], [], []
+raan_vec, argp_vec, anom_vec = [], [], []
+epoch_offset_vec = []
+with open(params_in_path, newline="") as f:
+    reader = csv.DictReader(f)
+    rows = list(reader)
+    if TEST_LIMIT is not None:
+        rows = rows[:TEST_LIMIT]
+    for row in rows:
+        sma_vec.append(float(row["sma_m"]))
+        ecc_vec.append(float(row["ecc"]))
+        inc_vec.append(float(row["inc_rad"]))
+        raan_vec.append(float(row["raan_rad"]))
+        argp_vec.append(float(row["argp_rad"]))
+        anom_vec.append(float(row["anom_rad"]))
+        epoch_offset_vec.append(float(row["epoch_offset_s"]))
 
-    os.makedirs("output", exist_ok=True)
+if not rows:
+    raise SystemExit(f"No satellites found in {params_in_path}.")
 
-    n_pass = sum(1 for r in results if r["delays"])
-    print(f"{n_pass} of {len(results)} satellites produced a visible pass.")
+# Station and timing settings are identical across rows (the generator
+# writes them as constants), so take them from the first row.
+first = rows[0]
+STATION_NAME = first["station_name"]
+STATION_LAT  = float(first["station_lat_rad"])
+STATION_LON  = float(first["station_lon_rad"])
+STATION_ALT  = float(first["station_alt_m"])
+DELTA_T      = float(first["delta_t_s"])
+CADENCE_S    = float(first["cadence_s"])
+RANGE_RATE_ERROR_MS = float(first["range_rate_error_ms"])
+SEARCH_WINDOW_S = float(first["search_window_s"])   # was hardcoded 80*60; now per-batch from the file
 
-    # --- Physics sanity check: range-rate band ---
-    all_rr = [v for r in results for v in r["range_rates"]]
-    if all_rr:
-        print(f"Range rate: min {min(all_rr):>9.1f} m/s   max {max(all_rr):>9.1f} m/s")
-        if max(abs(min(all_rr)), abs(max(all_rr))) > 8000.0:
-            print("  [WARN] range rate outside realistic LEO band -- check the observable.")
-        else:
-            print("  OK: within the realistic LEO band.")
+# Fixed calendar reference epoch_offset_s is measured from. NOT in the
+# CSV -- must match generate_params.py's EPOCH_STR by convention.
+EPOCH_BASE_STR = "2019-05-01T00:00:00"
 
-    # --- Physics sanity check: elevation band ---
-    all_el = [v for r in results for v in r["elevations"]]
-    if all_el:
-        print(f"Elevation:  min {math.degrees(min(all_el)):>9.2f} deg  "
-              f"max {math.degrees(max(all_el)):>9.2f} deg")
-        if min(all_el) < -0.05 or max(all_el) > (math.pi / 2 + 0.05):
-            print("  [WARN] elevation outside [0, 90] deg -- geometry calculation is suspect.")
-        else:
-            print("  OK: within the horizon-to-zenith band.")
+c_light = 299792458.0
 
-    # --- Zero-crossing check: a real Doppler pass usually crosses zero ---
-    n_cross = 0
-    for r in results:
-        d = r["delays"]
-        if len(d) > 1 and any(a * b < 0 for a, b in zip(d, d[1:])):
-            n_cross += 1
-    print(f"Zero crossing: {n_cross} of {n_pass} passes cross zero "
-          f"(approach -> recession).")
+n_sats_in = len(sma_vec)
+print(f"Loaded {len(rows)} satellites from {params_in_path}")
+if TEST_LIMIT is not None:
+    print(f"  [TEST_LIMIT active: only the first {TEST_LIMIT} will be run]")
 
-    # --- Timing sanity check: contiguity ---
-    non_contig = [i for i, r in enumerate(results) if r["delays"] and not r["contiguous"]]
-    print(f"Contiguity: {len(non_contig)} of {n_pass} non-empty passes have gaps.")
-    if non_contig:
-        print(f"  [WARN] non-contiguous sat_idx (first 10): {non_contig[:10]}")
+print(f"\n=== SIMULATION STARTED === ({n_sats_in} satellites)")
+t_start = time.time()
+
+results = simulate_doppler_pass(
+    sma_vec, ecc_vec, inc_vec, raan_vec, argp_vec, anom_vec,
+    epoch_offset_vec=epoch_offset_vec,
+    epoch_base_str=EPOCH_BASE_STR,
+    station_name=STATION_NAME,
+    station_lat=STATION_LAT,
+    station_lon=STATION_LON,
+    station_alt=STATION_ALT,
+    range_rate_error_ms=RANGE_RATE_ERROR_MS,
+    cadence_s=CADENCE_S,
+    search_window_s=SEARCH_WINDOW_S,
+    delta_t=DELTA_T,
+)
+
+t_elapsed = time.time() - t_start
+print(f"=== SIMULATION FINISHED === "
+      f"{t_elapsed:.1f} s ({t_elapsed/60:.2f} min, {t_elapsed/3600:.2f} hr)\n")
+
+os.makedirs("output", exist_ok=True)
+
+n_pass = sum(1 for r in results if r["delays"])
+print(f"{n_pass} of {len(results)} satellites produced a visible pass.")
+
+# --- Physics sanity check: range-rate band ---
+all_rr = [v for r in results for v in r["range_rates"]]
+if all_rr:
+    print(f"Range rate: min {min(all_rr):>9.1f} m/s   max {max(all_rr):>9.1f} m/s")
+    if max(abs(min(all_rr)), abs(max(all_rr))) > 8000.0:
+        print("  [WARN] range rate outside realistic LEO band -- check the observable.")
     else:
-        print("  OK: every pass is a consecutive run of cadence steps.")
+        print("  OK: within the realistic LEO band.")
 
-    # --- AOS spread: confirms passes really are scattered through the window ---
-    all_aos = [r["times_s"][0] for r in results if r["times_s"]]
-    if all_aos:
-        print(f"AOS time:   min {min(all_aos):>9.1f} s    max {max(all_aos):>9.1f} s "
-              f"(window is {SEARCH_WINDOW_S} s)")
+# --- Physics sanity check: elevation band ---
+all_el = [v for r in results for v in r["elevations"]]
+if all_el:
+    print(f"Elevation:  min {math.degrees(min(all_el)):>9.2f} deg  "
+          f"max {math.degrees(max(all_el)):>9.2f} deg")
+    if min(all_el) < -0.05 or max(all_el) > (math.pi / 2 + 0.05):
+        print("  [WARN] elevation outside [0, 90] deg -- geometry calculation is suspect.")
+    else:
+        print("  OK: within the horizon-to-zenith band.")
 
-    # Per-satellite table print is OFF by default -- for a large batch this
-    # can be hundreds of thousands of lines. Set VERBOSE_PER_SAT=True for
-    # small test batches (e.g. 10-50 satellites).
-    VERBOSE_PER_SAT = False
-    if VERBOSE_PER_SAT:
-        for sat_idx, r in enumerate(results):
-            if not r["delays"]:
-                print(f"\nSatellite {sat_idx}: no visible pass detected.")
-                continue
-            n = len(r["delays"])
-            print(f"\nSatellite {sat_idx} — {n} samples, AOS at {r['times_s'][0]:.1f} s")
-            print("-" * 96)
-            print(f"{'t since epoch (s)':>18} {'Range rate (m/s)':>18} "
-                  f"{'Delay diff (s)':>22} {'Elev (deg)':>14}")
-            print("-" * 96)
-            for t, rr, dd, el in zip(r["times_s"], r["range_rates"],
-                                     r["delays"], r["elevations"]):
-                print(f"{t:>18.1f} {rr:>18.1f} {dd:>22.12f} {math.degrees(el):>14.3f}")
-            print("-" * 96)
+# --- Zero-crossing check: a real Doppler pass usually crosses zero ---
+n_cross = 0
+for r in results:
+    d = r["delays"]
+    if len(d) > 1 and any(a * b < 0 for a, b in zip(d, d[1:])):
+        n_cross += 1
+print(f"Zero crossing: {n_cross} of {n_pass} passes cross zero "
+      f"(approach -> recession).")
 
-    # NOTE: the orbital parameters are NOT re-written here. They already live
-    # in output/random_orbital_parameters.csv (written by generate_params.py),
-    # and this run reads from that file. Both CSVs below align to it by
-    # sat_idx / row order, forming the labelled dataset.
+# --- Timing sanity check: contiguity ---
+non_contig = [i for i, r in enumerate(results) if r["delays"] and not r["contiguous"]]
+print(f"Contiguity: {len(non_contig)} of {n_pass} non-empty passes have gaps.")
+if non_contig:
+    print(f"  [WARN] non-contiguous sat_idx (first 10): {non_contig[:10]}")
+else:
+    print("  OK: every pass is a consecutive run of cadence steps.")
 
-    max_len = max((len(r["delays"]) for r in results), default=0)
+# --- AOS spread: confirms passes really are scattered through the window ---
+all_aos = [r["times_s"][0] for r in results if r["times_s"]]
+if all_aos:
+    print(f"AOS time:   min {min(all_aos):>9.1f} s    max {max(all_aos):>9.1f} s "
+          f"(window is {SEARCH_WINDOW_S} s)")
 
-    # --- CSV 1: delay differences (FEATURES) ---------------------------------
-    data_path = "output/delay_differences.csv"
-    with open(data_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        dd_cols = [f"dd_{i:03d}" for i in range(max_len)]
-        writer.writerow(["sat_idx", "num_valid_samples", "t_aos_s", "contiguous"] + dd_cols)
-        for sat_idx, r in enumerate(results):
-            delays = r["delays"]
-            n = len(delays)
-            t_aos = r["times_s"][0] if n else ""
-            padded = delays + [0.0] * (max_len - n)
-            writer.writerow([sat_idx, n, t_aos, int(r["contiguous"])] + padded)
-    print(f"\nDelay-difference data saved to {data_path}")
-
-    # --- CSV 2: pass geometry (LABELS) ---------------------------------------
-    # Truth data derived from the known orbit. This is a LABEL file, like
-    # initial_state_vectors.csv -- it must NOT be used as model input, since at
-    # inference only the delay sequence is observable.
-    geom_path = "output/pass_geometry.csv"
-    with open(geom_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        el_cols = [f"el_{i:03d}" for i in range(max_len)]
-        writer.writerow([
-            "sat_idx", "num_valid_samples", "t_aos_s",
-            "max_elevation_deg", "t_max_elevation_s",
-            "elev_first_deg", "elev_last_deg",
-            "az_first_deg", "az_last_deg",
-        ] + el_cols)
-        for sat_idx, r in enumerate(results):
-            el = r["elevations"]
-            az = r["azimuths"]
-            n = len(el)
-            if n:
-                k_max = max(range(n), key=lambda k: el[k])
-                t_aos = r["times_s"][0]
-                row_head = [
-                    sat_idx, n, t_aos,
-                    math.degrees(el[k_max]),
-                    r["times_s"][k_max] - t_aos,
-                    math.degrees(el[0]),
-                    math.degrees(el[-1]),
-                    math.degrees(az[0]),
-                    math.degrees(az[-1]),
-                ]
-            else:
-                row_head = [sat_idx, 0, "", "", "", "", "", "", ""]
-            padded_el = [math.degrees(e) for e in el] + [0.0] * (max_len - n)
-            writer.writerow(row_head + padded_el)
-    print(f"Pass geometry saved to {geom_path}")
-
-    # --- Combined plot ---------------------------------------------------
-    PLOT_LIMIT = 12
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    fig, ax = plt.subplots(figsize=(10, 5))
-    plotted = 0
+# Per-satellite table print is OFF by default -- for a large batch this
+# can be hundreds of thousands of lines. Set VERBOSE_PER_SAT=True for
+# small test batches (e.g. 10-50 satellites).
+VERBOSE_PER_SAT = False
+if VERBOSE_PER_SAT:
     for sat_idx, r in enumerate(results):
         if not r["delays"]:
+            print(f"\nSatellite {sat_idx}: no visible pass detected.")
             continue
-        if plotted >= PLOT_LIMIT:
-            break
-        t_aos = r["times_s"][0]
-        times_rel = [t - t_aos for t in r["times_s"]]
-        ax.plot(times_rel, r["delays"], marker="o",
-                color=colors[plotted % len(colors)],
-                label=f"Satellite {sat_idx}")
-        plotted += 1
-    ax.axhline(0, color="gray", linewidth=0.8, linestyle="--")
-    ax.set_xlabel("Time since AOS (s)")
-    ax.set_ylabel("Delay difference Δd (s)")
-    ax.set_title(f"Doppler delay difference — first {plotted} passes (δt = {DELTA_T} s)")
-    ax.legend(fontsize="small")
-    ax.grid(True)
-    plt.tight_layout()
-    plot_path = "output/doppler_all_satellites.png"
-    plt.savefig(plot_path, dpi=150)
-    print(f"Plot saved to {plot_path}")
-    plt.show()
+        n = len(r["delays"])
+        print(f"\nSatellite {sat_idx} — {n} samples, AOS at {r['times_s'][0]:.1f} s")
+        print("-" * 96)
+        print(f"{'t since epoch (s)':>18} {'Range rate (m/s)':>18} "
+              f"{'Delay diff (s)':>22} {'Elev (deg)':>14}")
+        print("-" * 96)
+        for t, rr, dd, el in zip(r["times_s"], r["range_rates"],
+                                 r["delays"], r["elevations"]):
+            print(f"{t:>18.1f} {rr:>18.1f} {dd:>22.12f} {math.degrees(el):>14.3f}")
+        print("-" * 96)
+
+# NOTE: the orbital parameters are NOT re-written here. They already live
+# in output/random_orbital_parameters.csv (written by generate_params.py),
+# and this run reads from that file. Both CSVs below align to it by
+# sat_idx / row order, forming the labelled dataset.
+
+max_len = max((len(r["delays"]) for r in results), default=0)
+
+# --- CSV 1: delay differences (FEATURES) ---------------------------------
+data_path = "output/delay_differences.csv"
+with open(data_path, "w", newline="") as f:
+    writer = csv.writer(f)
+    dd_cols = [f"dd_{i:03d}" for i in range(max_len)]
+    writer.writerow(["sat_idx", "num_valid_samples", "t_aos_s", "contiguous"] + dd_cols)
+    for sat_idx, r in enumerate(results):
+        delays = r["delays"]
+        n = len(delays)
+        t_aos = r["times_s"][0] if n else ""
+        padded = delays + [0.0] * (max_len - n)
+        writer.writerow([sat_idx, n, t_aos, int(r["contiguous"])] + padded)
+print(f"\nDelay-difference data saved to {data_path}")
+
+    # pass_geometry.csv and doppler_all_satellites.png are no longer written
+    # (nothing in the pipeline reads them and the plot added runtime).

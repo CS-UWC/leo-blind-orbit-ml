@@ -1,17 +1,30 @@
 # =============================================================================
-# cnn_trainer_v3.py -- 1D convolutional neural network on the padded,
-#                      mask-aware range-rate vectors (build_dataset_v3.py)
+# cnn_trainer_v3.py -- TRAINING half: 1D convolutional neural network on the
+#                      padded, mask-aware range-rate vectors (build_dataset_v3.py)
 # =============================================================================
 #
 # PURPOSE
 # -------
 # The learned-feature counterpart to forest_trainer_v3.py. Same input table
 # (output/training_table_padded.csv), same fixed 80/20 split
-# (output/train_test_split.csv via splits.py), same 5 CV folds inside the
-# training partition, same scoring code (score() imported from
-# forest_trainer_v3.py), same one-model-per-label design. The only thing
+# (output/train_test_split.csv via splits.py), same 5 CV folds over all
+# satellites, same scoring code (score() in common.py, used by
+# cnn_testing.py), same one-model-per-label design. The only thing
 # that changes between the trees and this file is the model, so any
 # difference in the results is attributable to the model.
+#
+# This file only FITS. It does not score anything: scoring and the figure are
+# in cnn_testing.py, which loads what this file saves, so a new metric or a
+# changed plot never needs the networks to be trained again.
+#
+# WHAT THIS FILE WRITES (all in output/)
+# --------------------------------------
+# 1. models/cnn/cnn__<target>.pt   6 files, one per label, each fitted on
+#    the 80% training satellites (weights plus the numbers needed to use
+#    them: input length, target mean/std, stopping epoch).
+# 2. cv_predictions_cnn_v3.csv   out-of-fold predictions from 5-fold CV over
+#    ALL satellites: sat_idx, fold, target, model, y_true, y_pred. The 5 fold
+#    networks per label are not kept, only these predictions.
 #
 # INPUT TO THE NETWORK
 # ----------------------
@@ -113,10 +126,7 @@ from torch import nn
 from sklearn.model_selection import KFold
 
 from Clean_Testing.splits import make_or_load_split, RANDOM_STATE
-from Clean_Testing.forest_trainer_v3 import (
-    load_table, score, is_circular, ALL_TARGETS, CV_FOLDS, _agg_stat,
-)
-import Clean_Testing.plot_predictions as plot_predictions
+from Clean_Testing.common import load_table, is_circular, ALL_TARGETS, CV_FOLDS
 
 
 RR_SCALE = 8000.0          # [m/s] fixed input scale for the range-rate channel
@@ -286,60 +296,75 @@ class CNNRegressor:
 
 
 # -----------------------------------------------------------------------------
-# Held-out test and CV -- same structure and same folds as forest_trainer_v3
+# Fit on the training satellites, CV predictions, save / load
 # -----------------------------------------------------------------------------
-def held_out_test(df, target, train_ids, test_ids, seed=RANDOM_STATE):
+MODEL_DIR = "output/models/cnn"
+
+
+def model_path(target):
+    return os.path.join(MODEL_DIR, f"{MODEL_NAME}__{target}.pt")
+
+
+def fit_on_train(df, target, train_ids, seed=RANDOM_STATE):
+    """Fit one CNN on the training satellites only. Returns the fitted CNNRegressor."""
     sub = df.dropna(subset=[target])
-    n_dropped = len(df) - len(sub)
     train = sub[sub["sat_idx"].isin(train_ids)]
-    test = sub[sub["sat_idx"].isin(test_ids)]
 
     model = CNNRegressor(circular=is_circular(target), seed=seed)
     model.fit(to_input(train), train[target].to_numpy())
-    pred = model.predict(to_input(test))
-
-    m = score(test[target].to_numpy(), pred, target)
-    m.update({
-        "target": target, "model_name": MODEL_NAME,
-        "n_train": len(train), "n_test": len(test), "n_dropped_nan": n_dropped,
-        "best_epoch": model.best_epoch_,
-    })
-    predictions = pd.DataFrame({
-        "sat_idx": test["sat_idx"].to_numpy(), "target": target, "model": MODEL_NAME,
-        "y_true": test[target].to_numpy(), "y_pred": pred,
-    })
-    return m, predictions
+    return model
 
 
-def cross_validate_in_train(df, target, train_ids, n_folds=CV_FOLDS, seed=RANDOM_STATE):
-    """Identical fold construction to forest_trainer_v3.cross_validate_in_train
-    (same row order, same KFold seed), so the CNN is scored on exactly the
-    same 5 folds the trees were. Scored per fold, mean +/- std across folds."""
-    train_only = df[df["sat_idx"].isin(train_ids)]
-    sub = train_only.dropna(subset=[target]).reset_index(drop=True)
-    n_dropped = len(train_only) - len(sub)
+def save_model(model, path, seq_len):
+    """Save a fitted CNNRegressor as plain tensors and numbers (no pickled
+    classes), so it can be loaded again by any script."""
+    torch.save({
+        "state_dict": model.model_.state_dict(),
+        "seq_len": int(seq_len),
+        "n_out": 2 if model.circular else 1,
+        "circular": bool(model.circular),
+        "seed": int(model.seed),
+        "y_mean": float(model.y_mean_),
+        "y_std": float(model.y_std_),
+        "best_epoch": int(model.best_epoch_),
+    }, path)
+
+
+def load_model(path):
+    """Rebuild a fitted CNNRegressor from a file written by save_model()."""
+    d = torch.load(path, weights_only=True)
+    model = CNNRegressor(circular=d["circular"], seed=d["seed"])
+    model.model_ = DopplerCNN(d["seq_len"], d["n_out"])
+    model.model_.load_state_dict(d["state_dict"])
+    model.y_mean_, model.y_std_ = np.float64(d["y_mean"]), np.float64(d["y_std"])
+    model.best_epoch_ = d["best_epoch"]
+    return model
+
+
+def cv_predictions(df, target, n_folds=CV_FOLDS, seed=RANDOM_STATE):
+    """5-fold CV over ALL satellites. Same fold construction as
+    forest_trainer_v3.cv_predictions (same row order, same KFold seed), so the
+    CNN is evaluated on exactly the same 5 folds the trees were. Returns
+    (out-of-fold predictions, best epoch of each fold). Scoring them, per fold,
+    is done in cnn_testing.py."""
+    sub = df.dropna(subset=[target]).reset_index(drop=True)
 
     X_all = to_input(sub)
     y_all = sub[target].to_numpy()
+    sat_all = sub["sat_idx"].to_numpy()
 
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=seed)
-    fold_scores, fold_epochs = [], []
-    for train_idx, val_idx in kf.split(X_all):
+    fold_epochs, oof = [], []
+    for fold, (train_idx, val_idx) in enumerate(kf.split(X_all), start=1):
         model = CNNRegressor(circular=is_circular(target), seed=seed)
         model.fit(X_all[train_idx], y_all[train_idx])
         pred = model.predict(X_all[val_idx])
-        fold_scores.append(score(y_all[val_idx], pred, target))
         fold_epochs.append(model.best_epoch_)
-
-    m = {}
-    for key in ("r2", "rmse", "circ_skill"):
-        mean_v, std_v = _agg_stat([fs[key] for fs in fold_scores])
-        m[key], m[f"{key}_std"] = mean_v, std_v
-    m.update({
-        "target": target, "model_name": MODEL_NAME,
-        "n": len(sub), "n_dropped_nan": n_dropped, "fold_epochs": fold_epochs,
-    })
-    return m
+        oof.append(pd.DataFrame({
+            "sat_idx": sat_all[val_idx], "fold": fold, "target": target,
+            "model": MODEL_NAME, "y_true": y_all[val_idx], "y_pred": pred,
+        }))
+    return pd.concat(oof, ignore_index=True), fold_epochs
 
 
 if __name__ == "__main__":
@@ -358,73 +383,31 @@ if __name__ == "__main__":
           f"{count_parameters(DopplerCNN(L, 1)):,} (linear labels), "
           f"{count_parameters(DopplerCNN(L, 2)):,} (circular labels)\n")
 
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    # --- fit on the training satellites, once per target, and save ---
+    print("Fitting on the training satellites and saving the models")
     t0 = time.time()
-
-    test_results, test_predictions = [], []
     for target in ALL_TARGETS:
-        m, preds = held_out_test(df, target, train_ids, test_ids)
-        test_results.append(m)
-        test_predictions.append(preds)
+        t1 = time.time()
+        model = fit_on_train(df, target, train_ids)
+        path = model_path(target)
+        save_model(model, path, L)
+        print(f"  saved {path}  (stopped at epoch {model.best_epoch_}, "
+              f"{(time.time() - t1) / 60:.1f} min)")
 
-    print(f"{'target':>28} {'n_train':>8} {'n_test':>7} {'epochs':>7} "
-          f"{'R2':>8} {'RMSE':>12} {'circ_skill':>11}")
-    print("-" * 90)
-    for r in test_results:
-        r2_str = f"{r['r2']:.3f}" if not np.isnan(r["r2"]) else "  --  "
-        skill_str = f"{r['circ_skill']:.3f}" if not np.isnan(r["circ_skill"]) else "  --  "
-        print(f"{r['target']:>28} {r['n_train']:>8} {r['n_test']:>7} {r['best_epoch']:>7} "
-              f"{r2_str:>8} {r['rmse']:>12.4f} {skill_str:>11}")
+    # --- 5-fold CV over all satellites: keep the out-of-fold predictions ---
+    print("\n5-fold cross-validation on all satellites (same folds as the trees)")
+    cv_frames = []
+    for target in ALL_TARGETS:
+        t1 = time.time()
+        oof, fold_epochs = cv_predictions(df, target)
+        cv_frames.append(oof)
+        print(f"  cv {target:>16}  fold epochs {fold_epochs}  ({(time.time() - t1) / 60:.1f} min)")
 
-    print("\n" + "=" * 90)
-    print("5-FOLD CROSS-VALIDATION ON THE TRAIN PARTITION ONLY (same folds as the trees)")
-    print("=" * 90)
-
-    cv_results = [cross_validate_in_train(df, target, train_ids) for target in ALL_TARGETS]
-
-    print(f"\n{'target':>28} {'n':>5} {'R2 (+/-std)':>16} {'RMSE (+/-std)':>24} "
-          f"{'circ_skill (+/-std)':>20}   fold epochs")
-    print("-" * 120)
-    for r in cv_results:
-        r2_str = (f"{r['r2']:.3f}+/-{r['r2_std']:.3f}"
-                  if not np.isnan(r["r2"]) else "  --  ")
-        skill_str = (f"{r['circ_skill']:.3f}+/-{r['circ_skill_std']:.3f}"
-                     if not np.isnan(r["circ_skill"]) else "  --  ")
-        rmse_str = f"{r['rmse']:.4f}+/-{r['rmse_std']:.4f}"
-        print(f"{r['target']:>28} {r['n']:>5} {r2_str:>16} {rmse_str:>24} "
-              f"{skill_str:>20}   {r['fold_epochs']}")
+    cv_path = "output/cv_predictions_cnn_v3.csv"
+    pd.concat(cv_frames, ignore_index=True).to_csv(cv_path, index=False)
 
     print(f"\nTotal training time: {time.time() - t0:.1f} s")
-
-    # --- save, same schema as model_results_v3.csv so the two can be compared
-    # or concatenated directly; separate files so neither run overwrites the other
-    os.makedirs("output", exist_ok=True)
-
-    pred_path = "output/test_predictions_cnn_v3.csv"
-    pd.concat(test_predictions, ignore_index=True).to_csv(pred_path, index=False)
-
-    out_rows = []
-    for r in test_results:
-        out_rows.append({
-            "method": "single_split", "model": MODEL_NAME, "target": r["target"],
-            "n": r["n_test"], "n_train": r["n_train"],
-            "r2": r["r2"], "rmse": r["rmse"], "circ_skill": r["circ_skill"],
-            "r2_std": np.nan, "rmse_std": np.nan, "circ_skill_std": np.nan,
-        })
-    for r in cv_results:
-        out_rows.append({
-            "method": "cv", "model": MODEL_NAME, "target": r["target"],
-            "n": r["n"], "n_train": np.nan,
-            "r2": r["r2"], "rmse": r["rmse"], "circ_skill": r["circ_skill"],
-            "r2_std": r["r2_std"], "rmse_std": r["rmse_std"],
-            "circ_skill_std": r["circ_skill_std"],
-        })
-    results_path = "output/model_results_cnn_v3.csv"
-    pd.DataFrame(out_rows).to_csv(results_path, index=False)
-
-    print(f"\nSaved held-out predictions to {pred_path}")
-    print(f"Saved model results to {results_path}")
-
-    plot_predictions.make_figure(
-        predictions_path=pred_path, results_path=results_path,
-        out_path="output/predicted_vs_true_cnn.png",
-    )
+    print(f"Saved out-of-fold CV predictions to {cv_path}")
+    print("Next: run cnn_testing.py to score the saved models and the CV predictions.")

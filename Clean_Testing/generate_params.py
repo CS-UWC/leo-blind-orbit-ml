@@ -384,7 +384,6 @@ def generate_random_params(
               "(Risk G1) - rv_to_coe is unaffected, it does not depend on it.")
 
 
-if __name__ == "__main__":
-    # Smoke-test scale first (per the plan): confirm this works before the
-    # full 10,000-orbit batch.
-    generate_random_params(n_samples=500)
+# Smoke-test scale first (per the plan): confirm this works before the
+# full 10,000-orbit batch.
+generate_random_params(n_samples=10000)
