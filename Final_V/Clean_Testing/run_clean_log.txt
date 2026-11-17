@@ -1,0 +1,320 @@
+[2026-10-20 00:58:21] clean run start, python C:\Users\raeez\blind_orbit_ml\.venv\Scripts\python.exe
+    cleared
+[2026-10-20 00:58:22] start generate_params.py
+[2026-10-20 00:59:13] clean run start, python C:\Users\raeez\blind_orbit_ml\.venv\Scripts\python.exe
+    cleared
+[2026-10-20 00:59:13] start generate_params.py
+    Saved 10000 parameter sets to output/random_orbital_parameters.csv
+    Saved 10000 ECEF state vectors to output/initial_state_vectors.csv
+    Total retries consumed across batch: 8066
+[2026-10-20 00:59:40] done  generate_params.py (0.4 min)
+    cleared
+[2026-10-20 00:59:40] start simv3.py
+[2026-10-20 01:21:14] clean run start, python C:\Users\raeez\blind_orbit_ml\.venv\Scripts\python.exe
+[2026-10-20 01:21:28] all required packages found
+    cleared
+[2026-10-20 01:21:29] start generate_params.py
+    Saved 10000 parameter sets to output/random_orbital_parameters.csv
+    Saved 10000 ECEF state vectors to output/initial_state_vectors.csv
+    Total retries consumed across batch: 8066
+[2026-10-20 01:21:48] done  generate_params.py (0.3 min)
+    cleared
+[2026-10-20 01:21:48] start simv3.py
+    C:\Users\raeez\blind_orbit_ml\Clean_Testing\simv3.py:591: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+      plt.show()
+    Loaded 10000 satellites from output/random_orbital_parameters.csv
+    
+    === SIMULATION STARTED === (10000 satellites)
+    === SIMULATION FINISHED === 4314.6 s (71.91 min, 1.20 hr)
+    
+    10000 of 10000 satellites produced a visible pass.
+    Range rate: min   -7357.4 m/s   max    7337.2 m/s
+      OK: within the realistic LEO band.
+    Elevation:  min      4.81 deg  max     89.16 deg
+      OK: within the horizon-to-zenith band.
+    Zero crossing: 10000 of 10000 passes cross zero (approach -> recession).
+    Contiguity: 0 of 10000 non-empty passes have gaps.
+      OK: every pass is a consecutive run of cadence steps.
+    AOS time:   min      12.2 s    max     510.1 s (window is 1440.0 s)
+    
+    Delay-difference data saved to output/delay_differences.csv
+    Pass geometry saved to output/pass_geometry.csv
+    Plot saved to output/doppler_all_satellites.png
+[2026-10-20 02:33:47] done  simv3.py (72.0 min)
+[2026-10-20 02:33:47] start build_dataset.py
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-20 02:34:00] done  build_dataset.py (0.2 min)
+[2026-10-20 02:34:00] start forest_trainer_v3.py
+    Loaded 10000 rows, 94 features (47 rr_c_* + 47 mask_*) from output/training_table_padded.csv
+    
+    Split: 8000 train / 2000 test satellites (output/train_test_split.csv)
+    
+    Saved per-satellite held-out test predictions to output/test_predictions_v3.csv (input for plot_predictions.py)
+    
+                          target          model  n_train  n_test       R2         RMSE  circ_skill
+    ----------------------------------------------------------------------------------------------------------------
+                     label_sma_m       lightgbm     8000    2000    0.968   55965.2320        --  
+                     label_sma_m  random_forest     8000    2000    0.966   57616.3915        --  
+    
+                       label_ecc       lightgbm     8000    2000    0.170       0.0052        --  
+                       label_ecc  random_forest     8000    2000    0.207       0.0051        --  
+    
+                   label_inc_deg       lightgbm     8000    2000    0.916       8.0394        --  
+                   label_inc_deg  random_forest     8000    2000    0.931       7.3003        --  
+    
+                  label_raan_deg       lightgbm     8000    2000     --       104.6291      -0.008
+                  label_raan_deg  random_forest     8000    2000     --       105.1084      -0.017
+    
+                  label_argp_deg       lightgbm     8000    2000     --       102.3340       0.027
+                  label_argp_deg  random_forest     8000    2000     --       103.1563       0.010
+    
+                  label_anom_deg       lightgbm     8000    2000     --        69.6652       0.400
+                  label_anom_deg  random_forest     8000    2000     --        73.3076       0.372
+    
+    Linear labels (sma, ecc, inc): R2 near 0 or negative means no better than the mean.
+    Circular labels (raan, argp, anom): R2 is left blank (not meaningful on wrapped
+    angles); circ_skill near 0 means no better than guessing a random label from the
+    batch, negative means worse than that.
+    
+    ================================================================================================================
+    5-FOLD CROSS-VALIDATION ON THE TRAIN PARTITION ONLY (the held-out test set above is never touched here)
+    ================================================================================================================
+    
+                          target          model       n      R2 (+/-std)      RMSE (+/-std)  circ_skill (+/-std)
+    ------------------------------------------------------------------------------------------------------------------------------------
+                     label_sma_m       lightgbm    8000    0.969+/-0.001 55885.2457+/-619.9366                 --  
+                     label_sma_m  random_forest    8000    0.967+/-0.002 57730.9581+/-1164.4196                 --  
+    
+                       label_ecc       lightgbm    8000    0.151+/-0.012    0.0053+/-0.0001                 --  
+                       label_ecc  random_forest    8000    0.173+/-0.010    0.0052+/-0.0001                 --  
+    
+                   label_inc_deg       lightgbm    8000    0.906+/-0.004    8.3978+/-0.2238                 --  
+                   label_inc_deg  random_forest    8000    0.919+/-0.004    7.7996+/-0.2360                 --  
+    
+                  label_raan_deg       lightgbm    8000             --    104.4446+/-1.1943       -0.007+/-0.017
+                  label_raan_deg  random_forest    8000             --    103.9194+/-1.1996        0.003+/-0.017
+    
+                  label_argp_deg       lightgbm    8000             --    104.7590+/-0.7121       -0.008+/-0.010
+                  label_argp_deg  random_forest    8000             --    105.2337+/-0.3899       -0.009+/-0.005
+    
+                  label_anom_deg       lightgbm    8000             --     73.1424+/-1.3665        0.373+/-0.013
+                  label_anom_deg  random_forest    8000             --     73.7327+/-1.1845        0.365+/-0.012
+    
+    Mean +/- std across the 5 folds (scored per fold, not pooled) -- a large std
+    relative to the mean means fold-to-fold performance is inconsistent, which a single
+    pooled CV number would hide. The held-out test numbers above are still the ones to
+    cite as generalization performance; these are for checking that stability.
+    
+    Saved model results to output/model_results_v3.csv
+[2026-10-20 03:18:13] done  forest_trainer_v3.py (44.2 min)
+[2026-10-20 03:18:13] start cnn_trainer_v3.py
+    Loaded 10000 rows, input shape per satellite (2, 47) from output/training_table_padded.csv
+    Split: 8000 train / 2000 test satellites (output/train_test_split.csv, shared with forest_trainer_v3.py)
+    DopplerCNN trainable parameters: 53,105 (linear labels), 53,170 (circular labels)
+    
+                          target  n_train  n_test  epochs       R2         RMSE  circ_skill
+    ------------------------------------------------------------------------------------------
+                     label_sma_m     8000    2000     234    0.969   55005.1180        --  
+                       label_ecc     8000    2000     391    0.130       0.0054        --  
+                   label_inc_deg     8000    2000     514    0.946       6.4113        --  
+                  label_raan_deg     8000    2000       3     --       104.8550      -0.008
+                  label_argp_deg     8000    2000      11     --       104.0670      -0.008
+                  label_anom_deg     8000    2000     990     --        71.6995       0.383
+    
+    ==========================================================================================
+    5-FOLD CROSS-VALIDATION ON THE TRAIN PARTITION ONLY (same folds as the trees)
+    ==========================================================================================
+    
+                          target     n      R2 (+/-std)            RMSE (+/-std)  circ_skill (+/-std)   fold epochs
+    ------------------------------------------------------------------------------------------------------------------------
+                     label_sma_m  8000    0.970+/-0.002   54800.5081+/-1790.7127                 --     [239, 268, 230, 260, 289]
+                       label_ecc  8000    0.122+/-0.017          0.0054+/-0.0001                 --     [133, 131, 400, 186, 252]
+                   label_inc_deg  8000    0.944+/-0.005          6.4773+/-0.2522                 --     [463, 386, 296, 731, 655]
+                  label_raan_deg  8000             --          102.8884+/-1.1631        0.013+/-0.018   [2, 1, 3, 6, 8]
+                  label_argp_deg  8000             --          103.7367+/-1.0712        0.004+/-0.013   [3, 3, 5, 1, 5]
+                  label_anom_deg  8000             --           73.2058+/-1.1174        0.365+/-0.013   [1272, 1011, 1253, 641, 875]
+    
+    Total training time: 24042.0 s
+    
+    Saved held-out predictions to output/test_predictions_cnn_v3.csv
+    Saved model results to output/model_results_cnn_v3.csv
+    Saved figure to output/predicted_vs_true_cnn.png
+[2026-10-20 09:59:11] done  cnn_trainer_v3.py (401.0 min)
+[2026-10-20 09:59:11] start plot_predictions.py
+    Saved figure to output/predicted_vs_true.png
+[2026-10-20 09:59:27] done  plot_predictions.py (0.3 min)
+[2026-10-20 09:59:27] ALL DONE in 8.64 h
+[2026-10-20 23:27:00] clean run start, python C:\Users\raeez\blind_orbit_ml\.venv\Scripts\python.exe, steps: forest_trainer_v3, forest_testing, cnn_trainer_v3, cnn_testing, plot_predictions
+[2026-10-20 23:27:18] all required packages found
+[2026-10-20 23:27:18] start forest_trainer_v3.py
+    Loaded 10000 rows, 94 features (47 rr_c_* + 47 mask_*) from output/training_table_padded.csv
+    
+    Split: 8000 train / 2000 test satellites (output/train_test_split.csv)
+    
+    Fitting on the training satellites and saving the models
+      saved output/models/forest\lightgbm__label_sma_m.joblib  (0.1 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_sma_m.joblib  (59.3 MB, 0.5 min)
+      saved output/models/forest\lightgbm__label_ecc.joblib  (0.1 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_ecc.joblib  (62.9 MB, 1.2 min)
+      saved output/models/forest\lightgbm__label_inc_deg.joblib  (0.1 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_inc_deg.joblib  (62.4 MB, 0.9 min)
+      saved output/models/forest\lightgbm__label_raan_deg.joblib  (0.2 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_raan_deg.joblib  (126.1 MB, 2.4 min)
+      saved output/models/forest\lightgbm__label_argp_deg.joblib  (0.2 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_argp_deg.joblib  (126.1 MB, 2.9 min)
+      saved output/models/forest\lightgbm__label_anom_deg.joblib  (0.2 MB, 0.0 min)
+      saved output/models/forest\random_forest__label_anom_deg.joblib  (126.0 MB, 1.4 min)
+    
+    5-fold cross-validation on all satellites (every satellite is predicted once while unseen)
+      cv      lightgbm      label_sma_m  (0.0 min)
+      cv random_forest      label_sma_m  (2.5 min)
+      cv      lightgbm        label_ecc  (0.0 min)
+      cv random_forest        label_ecc  (7.2 min)
+      cv      lightgbm    label_inc_deg  (0.0 min)
+      cv random_forest    label_inc_deg  (4.6 min)
+      cv      lightgbm   label_raan_deg  (0.0 min)
+      cv random_forest   label_raan_deg  (12.8 min)
+      cv      lightgbm   label_argp_deg  (0.0 min)
+      cv random_forest   label_argp_deg  (13.9 min)
+      cv      lightgbm   label_anom_deg  (0.0 min)
+      cv random_forest   label_anom_deg  (6.8 min)
+    
+    Saved out-of-fold CV predictions to output/cv_predictions_v3.csv
+    Next: run forest_testing.py to score the saved models and the CV predictions.
+[2026-10-21 00:24:50] done  forest_trainer_v3.py (57.5 min)
+[2026-10-21 00:24:50] start forest_testing.py
+    Loaded 10000 rows. Split: 8000 train / 2000 test satellites (output/train_test_split.csv)
+    
+    Saved per-satellite held-out test predictions to output/test_predictions_v3.csv (input for plot_predictions.py)
+    
+                          target          model  n_train  n_test       R2         RMSE   circ_corr
+    ----------------------------------------------------------------------------------------------------------------
+                     label_sma_m       lightgbm     8000    2000    0.968   55965.2320        --  
+                     label_sma_m  random_forest     8000    2000    0.966   57616.3915        --  
+    
+                       label_ecc       lightgbm     8000    2000    0.170       0.0052        --  
+                       label_ecc  random_forest     8000    2000    0.207       0.0051        --  
+    
+                   label_inc_deg       lightgbm     8000    2000    0.916       8.0394        --  
+                   label_inc_deg  random_forest     8000    2000    0.931       7.3003        --  
+    
+                  label_raan_deg       lightgbm     8000    2000     --       104.6291      -0.024
+                  label_raan_deg  random_forest     8000    2000     --       105.1084      -0.009
+    
+                  label_argp_deg       lightgbm     8000    2000     --       102.3340       0.004
+                  label_argp_deg  random_forest     8000    2000     --       103.1563      -0.007
+    
+                  label_anom_deg       lightgbm     8000    2000     --        69.6652       0.704
+                  label_anom_deg  random_forest     8000    2000     --        73.3076       0.557
+    
+    Linear labels (sma, ecc, inc): R2 near 0 or negative means no better than the mean.
+    Circular labels (raan, argp, anom): R2 is left blank (not meaningful on wrapped
+    angles); circ_corr is the circular correlation (0 = no relationship, 1 = perfect,
+    negative = inverse relationship).
+    
+    Saved held-out test results to output/test_results_v3.csv
+    
+    ================================================================================================================
+    5-FOLD CROSS-VALIDATION ON ALL SATELLITES (separate from the held-out test above; every satellite is scored once while unseen)
+    ================================================================================================================
+    
+                          target          model       n      R2 (+/-std)      RMSE (+/-std)   circ_corr (+/-std)
+    ------------------------------------------------------------------------------------------------------------------------------------
+                     label_sma_m       lightgbm   10000    0.969+/-0.001 55560.6238+/-599.2562                 --  
+                     label_sma_m  random_forest   10000    0.967+/-0.001 57098.5436+/-527.2017                 --  
+    
+                       label_ecc       lightgbm   10000    0.171+/-0.008    0.0052+/-0.0000                 --  
+                       label_ecc  random_forest   10000    0.204+/-0.011    0.0051+/-0.0000                 --  
+    
+                   label_inc_deg       lightgbm   10000    0.909+/-0.004    8.2740+/-0.1289                 --  
+                   label_inc_deg  random_forest   10000    0.925+/-0.004    7.5139+/-0.1389                 --  
+    
+                  label_raan_deg       lightgbm   10000             --    104.6387+/-0.7323       -0.008+/-0.018
+                  label_raan_deg  random_forest   10000             --    104.4106+/-1.1887       -0.006+/-0.019
+    
+                  label_argp_deg       lightgbm   10000             --    104.5506+/-1.1482        0.007+/-0.021
+                  label_argp_deg  random_forest   10000             --    104.5984+/-0.7822       -0.003+/-0.005
+    
+                  label_anom_deg       lightgbm   10000             --     71.9634+/-1.3982        0.142+/-0.373
+                  label_anom_deg  random_forest   10000             --     72.9841+/-1.2948        0.313+/-0.366
+    
+    Mean +/- std across the 5 folds (scored per fold, not pooled) -- a large std
+    relative to the mean means fold-to-fold performance is inconsistent, which a single
+    pooled CV number would hide. The held-out test numbers above are still the ones to
+    cite as generalization performance; these are for checking that stability.
+    
+    Saved CV results to output/cv_results_v3.csv
+[2026-10-21 00:25:20] done  forest_testing.py (0.5 min)
+[2026-10-21 00:25:20] start cnn_trainer_v3.py
+    Loaded 10000 rows, input shape per satellite (2, 47) from output/training_table_padded.csv
+    Split: 8000 train / 2000 test satellites (output/train_test_split.csv, shared with forest_trainer_v3.py)
+    DopplerCNN trainable parameters: 53,105 (linear labels), 53,170 (circular labels)
+    
+    Fitting on the training satellites and saving the models
+      saved output/models/cnn\cnn__label_sma_m.pt  (stopped at epoch 234, 9.2 min)
+      saved output/models/cnn\cnn__label_ecc.pt  (stopped at epoch 391, 15.0 min)
+      saved output/models/cnn\cnn__label_inc_deg.pt  (stopped at epoch 514, 18.7 min)
+      saved output/models/cnn\cnn__label_raan_deg.pt  (stopped at epoch 3, 2.2 min)
+      saved output/models/cnn\cnn__label_argp_deg.pt  (stopped at epoch 11, 2.5 min)
+      saved output/models/cnn\cnn__label_anom_deg.pt  (stopped at epoch 990, 35.1 min)
+    
+    5-fold cross-validation on all satellites (same folds as the trees)
+      cv      label_sma_m  fold epochs [234, 332, 138, 348, 279]  (52.4 min)
+      cv        label_ecc  fold epochs [391, 256, 296, 228, 114]  (52.1 min)
+      cv    label_inc_deg  fold epochs [514, 464, 434, 216, 326]  (73.0 min)
+      cv   label_raan_deg  fold epochs [3, 5, 2, 20, 2]  (11.7 min)
+      cv   label_argp_deg  fold epochs [11, 1, 1, 7, 3]  (11.4 min)
+      cv   label_anom_deg  fold epochs [990, 1049, 803, 798, 980]  (162.1 min)
+    
+    Total training time: 26729.0 s
+    Saved out-of-fold CV predictions to output/cv_predictions_cnn_v3.csv
+    Next: run cnn_testing.py to score the saved models and the CV predictions.
+[2026-10-21 07:51:03] done  cnn_trainer_v3.py (445.7 min)
+[2026-10-21 07:51:03] start cnn_testing.py
+    Loaded 10000 rows. Split: 8000 train / 2000 test satellites (output/train_test_split.csv)
+    
+                          target  n_train  n_test  epochs       R2         RMSE   circ_corr
+    ------------------------------------------------------------------------------------------
+                     label_sma_m     8000    2000     234    0.969   55005.1180        --  
+                       label_ecc     8000    2000     391    0.130       0.0054        --  
+                   label_inc_deg     8000    2000     514    0.946       6.4113        --  
+                  label_raan_deg     8000    2000       3     --       104.8550       0.035
+                  label_argp_deg     8000    2000      11     --       104.0670       0.026
+                  label_anom_deg     8000    2000     990     --        71.6995       0.449
+    
+    ==========================================================================================
+    5-FOLD CROSS-VALIDATION ON ALL SATELLITES (same folds as the trees)
+    ==========================================================================================
+    
+                          target     n      R2 (+/-std)            RMSE (+/-std)   circ_corr (+/-std)
+    ----------------------------------------------------------------------------------------------------
+                     label_sma_m 10000    0.969+/-0.002   55986.2543+/-1905.6185                 --  
+                       label_ecc 10000    0.127+/-0.011          0.0054+/-0.0000                 --  
+                   label_inc_deg 10000    0.940+/-0.015          6.6940+/-0.7192                 --  
+                  label_raan_deg 10000             --          103.0655+/-0.9659       -0.017+/-0.028
+                  label_argp_deg 10000             --          103.9636+/-0.4950        0.001+/-0.015
+                  label_anom_deg 10000             --           72.4139+/-2.6703        0.097+/-0.310
+    
+    Saved held-out predictions to output/test_predictions_cnn_v3.csv
+    Saved held-out test results to output/test_results_cnn_v3.csv
+    Saved CV results to output/cv_results_cnn_v3.csv
+    Saved figure to output/predicted_vs_true_cnn.png
+[2026-10-21 07:51:20] done  cnn_testing.py (0.3 min)
+[2026-10-21 07:51:20] start plot_predictions.py
+    Saved figure to output/predicted_vs_true.png
+[2026-10-21 07:51:25] done  plot_predictions.py (0.1 min)
+[2026-10-21 07:51:25] ALL DONE in 8.41 h

@@ -1,0 +1,17 @@
+measure,value
+satellites,10000.0
+satellites with a continuous pass (contiguous = 1),10000.0
+readings per pass: min,15.0
+readings per pass: median,30.0
+readings per pass: max,47.0
+duration (min): min,7.0
+duration (min): median,14.5
+duration (min): mean,14.3
+duration (min): 90th percentile,19.0
+duration (min): max,23.0
+passes longer than 12 min,6749.0
+window length (min),24.0
+earliest first reading (s after window start),12.2
+latest last reading (s after window start),1423.6
+passes starting within 30 s of the window start,1.0
+passes ending within 30 s of the window end,1.0

@@ -216,3 +216,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Old six-label models, some over GitHub's 100 MB limit
+Final_V/Clean_Testing/output/models/

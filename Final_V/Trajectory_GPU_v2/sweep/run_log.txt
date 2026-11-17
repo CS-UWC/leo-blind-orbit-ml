@@ -1,0 +1,599 @@
+[2026-10-21 19:03:08] start: sigmas [0.0], clean data /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Clean_Testing/output, labels /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Closest_Approach/output/closest_approach.csv
+[2026-10-21 19:03:08] === noise level 0.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_0
+[2026-10-21 19:03:08]   start sigma_0 / copy clean simulation
+[2026-10-21 19:03:12]   done  sigma_0 / copy clean simulation (0.1 min)
+[2026-10-21 19:03:12]   start sigma_0 / build_dataset
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-21 19:03:23]   done  sigma_0 / build_dataset (0.2 min)
+[2026-10-21 19:03:23]   start sigma_0 / labels
+    10000 satellites (0 without a closest approach dropped), 94 inputs, 8 labels -> output/training_table_ca.csv
+                 label_alt_ca_km: min     330.9  median     939.9  max      1631
+               label_elev_ca_deg: min     39.58  median     54.92  max     89.79
+               label_az_fold_deg: min  0.004909  median     55.17  max        90
+         label_ang_rate_ca_deg_s: min    0.1728  median    0.3659  max     1.242
+         label_radial_vel_ca_mps: min    -151.5  median    -2.269  max     148.6
+                 label_eastbound: share of 1s 0.86
+                label_northbound: share of 1s 0.50
+               label_passes_east: share of 1s 0.50
+[2026-10-21 19:03:28]   done  sigma_0 / labels (0.1 min)
+[2026-10-21 19:03:28]   start sigma_0 / forests
+    8000 train / 2000 test satellites, 94 inputs
+    
+           lightgbm            label_alt_ca_km  (0.0 min)
+      random_forest            label_alt_ca_km  (0.9 min)
+           lightgbm          label_elev_ca_deg  (0.0 min)
+      random_forest          label_elev_ca_deg  (1.2 min)
+           lightgbm          label_az_fold_deg  (0.0 min)
+      random_forest          label_az_fold_deg  (1.6 min)
+           lightgbm    label_ang_rate_ca_deg_s  (0.0 min)
+      random_forest    label_ang_rate_ca_deg_s  (1.0 min)
+           lightgbm    label_radial_vel_ca_mps  (0.0 min)
+      random_forest    label_radial_vel_ca_mps  (1.3 min)
+           lightgbm            label_eastbound  (0.0 min)
+      random_forest            label_eastbound  (0.2 min)
+           lightgbm           label_northbound  (0.0 min)
+      random_forest           label_northbound  (0.2 min)
+           lightgbm          label_passes_east  (0.0 min)
+      random_forest          label_passes_east  (0.2 min)
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km       lightgbm       16.2     10.53     25.08   0.997     318.3 |
+               label_alt_ca_km  random_forest      18.63     11.37     29.26   0.997     318.3 |
+             label_elev_ca_deg       lightgbm      2.587     1.454     4.006   0.950     11.55 |
+             label_elev_ca_deg  random_forest       2.65     1.306     3.986   0.947     11.55 |
+             label_az_fold_deg       lightgbm          9     5.757     14.69   0.886     26.65 |
+             label_az_fold_deg  random_forest      8.189     4.842     13.48   0.906     26.65 |
+       label_ang_rate_ca_deg_s       lightgbm   0.004894  0.001424  0.004268   0.999    0.1825 |
+       label_ang_rate_ca_deg_s  random_forest   0.003369  0.001339  0.004226   1.000    0.1825 |
+       label_radial_vel_ca_mps       lightgbm      29.38     18.69     48.29   0.761     60.08 |
+       label_radial_vel_ca_mps  random_forest      30.31     19.25     49.72   0.746     60.08 |
+               label_eastbound       lightgbm                                                  |    0.950  0.853
+               label_eastbound  random_forest                                                  |    0.950  0.853
+              label_northbound       lightgbm                                                  |    0.494  0.507
+              label_northbound  random_forest                                                  |    0.501  0.507
+             label_passes_east       lightgbm                                                  |    0.626  0.516
+             label_passes_east  random_forest                                                  |    0.610  0.516
+    
+    Saved output/test_predictions_forest.csv and output/test_results_forest.csv
+[2026-10-21 19:10:14]   done  sigma_0 / forests (6.8 min)
+    wrote results_summary.csv (16 rows)
+    wrote results.png
+[2026-10-21 19:10:17] ALL DONE in 0.12 h. 0.0: ok
+[2026-10-21 19:37:48] start: sigmas [0.0], clean data /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Clean_Testing/output, labels /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Closest_Approach/output/closest_approach.csv
+[2026-10-21 19:37:48] === noise level 0.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_0
+[2026-10-21 19:37:48]   skip  sigma_0 / copy clean simulation (already done)
+[2026-10-21 19:37:48]   skip  sigma_0 / build_dataset (already done)
+[2026-10-21 19:37:48]   skip  sigma_0 / labels (already done)
+[2026-10-21 19:37:48]   skip  sigma_0 / forests (already done)
+[2026-10-21 19:37:48]   start sigma_0 / cnn
+    8000 train / 2000 test satellites, input (2, 47), device cuda (Tesla T4)
+    
+      training 8 networks together on cuda (Tesla T4), 8000 satellites each
+        stage 1 (early stopping) epoch  100: 8 of 8 networks still training (1.5 min)
+        stage 1 (early stopping) epoch  200: 6 of 8 networks still training (2.9 min)
+        stage 1 (early stopping) epoch  300: 6 of 8 networks still training (4.3 min)
+        stage 1 (early stopping) epoch  400: 5 of 8 networks still training (5.8 min)
+        stage 1 (early stopping) epoch  500: 5 of 8 networks still training (7.2 min)
+        stage 1 (early stopping) epoch  600: 2 of 8 networks still training (8.6 min)
+        stage 1 (early stopping) epoch  700: 1 of 8 networks still training (10.0 min)
+        stage 1 (early stopping) epoch  800: 1 of 8 networks still training (11.5 min)
+        stage 1 (early stopping) epoch  900: 1 of 8 networks still training (12.9 min)
+        stage 1 (early stopping) epoch 1000: 1 of 8 networks still training (14.3 min)
+        stage 1 (early stopping) epoch 1058: 0 of 8 networks still training (15.2 min)
+        stage 2 (all training data) epoch  100: 6 of 8 networks still training (1.8 min)
+        stage 2 (all training data) epoch  200: 6 of 8 networks still training (3.6 min)
+        stage 2 (all training data) epoch  300: 5 of 8 networks still training (5.4 min)
+        stage 2 (all training data) epoch  400: 4 of 8 networks still training (7.2 min)
+        stage 2 (all training data) epoch  500: 2 of 8 networks still training (8.9 min)
+        stage 2 (all training data) epoch  600: 1 of 8 networks still training (10.7 min)
+        stage 2 (all training data) epoch  700: 1 of 8 networks still training (12.5 min)
+        stage 2 (all training data) epoch  800: 1 of 8 networks still training (14.2 min)
+        stage 2 (all training data) epoch  900: 1 of 8 networks still training (16.0 min)
+        stage 2 (all training data) epoch  908: 0 of 8 networks still training (16.1 min)
+    
+    Training time: 31.3 min. Stopping epochs: label_alt_ca_km 406, label_elev_ca_deg 246, label_az_fold_deg 524, label_ang_rate_ca_deg_s 383, label_radial_vel_ca_mps 908, label_eastbound 428, label_northbound 31, label_passes_east 8
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km            cnn      13.58     9.453     21.54   0.998     318.3 |
+             label_elev_ca_deg            cnn      2.396      1.29     3.675   0.957     11.55 |
+             label_az_fold_deg            cnn      6.904     4.043     11.22   0.933     26.65 |
+       label_ang_rate_ca_deg_s            cnn   0.003401  0.002432  0.005484   1.000    0.1825 |
+       label_radial_vel_ca_mps            cnn      29.66      19.7     48.78   0.756     60.08 |
+               label_eastbound            cnn                                                  |    0.947  0.853
+              label_northbound            cnn                                                  |    0.506  0.507
+             label_passes_east            cnn                                                  |    0.486  0.516
+    
+    Saved output/test_predictions_cnn.csv, output/test_results_cnn.csv and the models
+[2026-10-21 20:09:18]   done  sigma_0 / cnn (31.5 min)
+    wrote results_summary.csv (24 rows)
+    wrote results.png
+[2026-10-21 20:09:21] ALL DONE in 0.53 h. 0.0: ok
+[2026-10-21 20:58:55] start: sigmas [0.5, 1.0, 2.0, 4.0], clean data /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Clean_Testing/output, labels /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Closest_Approach/output/closest_approach.csv
+[2026-10-21 20:58:55] === noise level 0.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_0
+[2026-10-21 20:58:55]   skip  sigma_0 / copy clean simulation (already done)
+[2026-10-21 20:58:55]   skip  sigma_0 / build_dataset (already done)
+[2026-10-21 20:58:55]   skip  sigma_0 / labels (already done)
+[2026-10-21 20:58:55]   skip  sigma_0 / forests (already done)
+[2026-10-21 20:58:55]   skip  sigma_0 / cnn (already done)
+[2026-10-21 20:58:55] === noise level 0.5 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_0p5
+[2026-10-21 20:58:55]   start sigma_0p5 / add_noise
+    sigma = 0.5 m/s (delta_t = 0.001 s, seed = 2024): noise added to 10000 of 10000 satellites -> output
+[2026-10-21 20:58:57]   done  sigma_0p5 / add_noise (0.0 min)
+[2026-10-21 20:58:57]   start sigma_0p5 / build_dataset
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-21 20:59:08]   done  sigma_0p5 / build_dataset (0.2 min)
+[2026-10-21 20:59:08]   start sigma_0p5 / labels
+    10000 satellites (0 without a closest approach dropped), 94 inputs, 8 labels -> output/training_table_ca.csv
+                 label_alt_ca_km: min     330.9  median     939.9  max      1631
+               label_elev_ca_deg: min     39.58  median     54.92  max     89.79
+               label_az_fold_deg: min  0.004909  median     55.17  max        90
+         label_ang_rate_ca_deg_s: min    0.1728  median    0.3659  max     1.242
+         label_radial_vel_ca_mps: min    -151.5  median    -2.269  max     148.6
+                 label_eastbound: share of 1s 0.86
+                label_northbound: share of 1s 0.50
+               label_passes_east: share of 1s 0.50
+[2026-10-21 20:59:11]   done  sigma_0p5 / labels (0.0 min)
+[2026-10-21 20:59:11]   start sigma_0p5 / forests
+    8000 train / 2000 test satellites, 94 inputs
+    
+           lightgbm            label_alt_ca_km  (0.0 min)
+      random_forest            label_alt_ca_km  (1.0 min)
+           lightgbm          label_elev_ca_deg  (0.0 min)
+      random_forest          label_elev_ca_deg  (1.2 min)
+           lightgbm          label_az_fold_deg  (0.0 min)
+      random_forest          label_az_fold_deg  (1.6 min)
+           lightgbm    label_ang_rate_ca_deg_s  (0.0 min)
+      random_forest    label_ang_rate_ca_deg_s  (1.0 min)
+           lightgbm    label_radial_vel_ca_mps  (0.0 min)
+      random_forest    label_radial_vel_ca_mps  (1.3 min)
+           lightgbm            label_eastbound  (0.0 min)
+      random_forest            label_eastbound  (0.2 min)
+           lightgbm           label_northbound  (0.0 min)
+      random_forest           label_northbound  (0.3 min)
+           lightgbm          label_passes_east  (0.0 min)
+      random_forest          label_passes_east  (0.2 min)
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km       lightgbm      16.19     10.22     25.79   0.997     318.3 |
+               label_alt_ca_km  random_forest      18.78     11.46     29.71   0.997     318.3 |
+             label_elev_ca_deg       lightgbm      2.595     1.425     3.977   0.949     11.55 |
+             label_elev_ca_deg  random_forest      2.639     1.313     3.958   0.948     11.55 |
+             label_az_fold_deg       lightgbm      8.997     5.581     15.31   0.886     26.65 |
+             label_az_fold_deg  random_forest      8.237     4.788     13.63   0.904     26.65 |
+       label_ang_rate_ca_deg_s       lightgbm   0.004874  0.001444  0.004258   0.999    0.1825 |
+       label_ang_rate_ca_deg_s  random_forest   0.003358  0.001351  0.004105   1.000    0.1825 |
+       label_radial_vel_ca_mps       lightgbm      29.19     18.65     48.07   0.764     60.08 |
+       label_radial_vel_ca_mps  random_forest      30.55     19.67     50.57   0.741     60.08 |
+               label_eastbound       lightgbm                                                  |    0.950  0.853
+               label_eastbound  random_forest                                                  |    0.947  0.853
+              label_northbound       lightgbm                                                  |    0.497  0.507
+              label_northbound  random_forest                                                  |    0.502  0.507
+             label_passes_east       lightgbm                                                  |    0.616  0.516
+             label_passes_east  random_forest                                                  |    0.615  0.516
+    
+    Saved output/test_predictions_forest.csv and output/test_results_forest.csv
+[2026-10-21 21:06:08]   done  sigma_0p5 / forests (7.0 min)
+[2026-10-21 21:06:08]   start sigma_0p5 / cnn
+    8000 train / 2000 test satellites, input (2, 47), device cuda (Tesla T4)
+    
+      training 8 networks together on cuda (Tesla T4), 8000 satellites each
+        stage 1 (early stopping) epoch  100: 8 of 8 networks still training (1.5 min)
+        stage 1 (early stopping) epoch  200: 6 of 8 networks still training (3.0 min)
+        stage 1 (early stopping) epoch  300: 6 of 8 networks still training (4.6 min)
+        stage 1 (early stopping) epoch  400: 5 of 8 networks still training (6.1 min)
+        stage 1 (early stopping) epoch  500: 4 of 8 networks still training (7.6 min)
+        stage 1 (early stopping) epoch  600: 3 of 8 networks still training (9.1 min)
+        stage 1 (early stopping) epoch  700: 3 of 8 networks still training (10.6 min)
+        stage 1 (early stopping) epoch  800: 2 of 8 networks still training (12.1 min)
+        stage 1 (early stopping) epoch  900: 1 of 8 networks still training (13.5 min)
+        stage 1 (early stopping) epoch 1000: 1 of 8 networks still training (15.0 min)
+        stage 1 (early stopping) epoch 1014: 0 of 8 networks still training (15.2 min)
+        stage 2 (all training data) epoch  100: 6 of 8 networks still training (1.9 min)
+        stage 2 (all training data) epoch  200: 5 of 8 networks still training (3.7 min)
+        stage 2 (all training data) epoch  300: 5 of 8 networks still training (5.6 min)
+        stage 2 (all training data) epoch  400: 3 of 8 networks still training (7.4 min)
+        stage 2 (all training data) epoch  500: 3 of 8 networks still training (9.3 min)
+        stage 2 (all training data) epoch  600: 3 of 8 networks still training (11.1 min)
+        stage 2 (all training data) epoch  700: 1 of 8 networks still training (13.0 min)
+        stage 2 (all training data) epoch  800: 1 of 8 networks still training (14.9 min)
+        stage 2 (all training data) epoch  864: 0 of 8 networks still training (16.1 min)
+    
+    Training time: 31.4 min. Stopping epochs: label_alt_ca_km 325, label_elev_ca_deg 614, label_az_fold_deg 174, label_ang_rate_ca_deg_s 395, label_radial_vel_ca_mps 864, label_eastbound 690, label_northbound 28, label_passes_east 8
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km            cnn      14.38     9.778     23.15   0.998     318.3 |
+             label_elev_ca_deg            cnn      2.295     1.168     3.636   0.961     11.55 |
+             label_az_fold_deg            cnn      7.083     4.241      11.8   0.929     26.65 |
+       label_ang_rate_ca_deg_s            cnn   0.002695  0.001745  0.004137   1.000    0.1825 |
+       label_radial_vel_ca_mps            cnn      28.45     18.71     47.25   0.776     60.08 |
+               label_eastbound            cnn                                                  |    0.953  0.853
+              label_northbound            cnn                                                  |    0.504  0.507
+             label_passes_east            cnn                                                  |    0.486  0.516
+    
+    Saved output/test_predictions_cnn.csv, output/test_results_cnn.csv and the models
+[2026-10-21 21:37:35]   done  sigma_0p5 / cnn (31.5 min)
+[2026-10-21 21:37:35] === noise level 1.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_1
+[2026-10-21 21:37:35]   start sigma_1 / add_noise
+    sigma = 1.0 m/s (delta_t = 0.001 s, seed = 2024): noise added to 10000 of 10000 satellites -> output
+[2026-10-21 21:37:37]   done  sigma_1 / add_noise (0.0 min)
+[2026-10-21 21:37:37]   start sigma_1 / build_dataset
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-21 21:37:48]   done  sigma_1 / build_dataset (0.2 min)
+[2026-10-21 21:37:48]   start sigma_1 / labels
+    10000 satellites (0 without a closest approach dropped), 94 inputs, 8 labels -> output/training_table_ca.csv
+                 label_alt_ca_km: min     330.9  median     939.9  max      1631
+               label_elev_ca_deg: min     39.58  median     54.92  max     89.79
+               label_az_fold_deg: min  0.004909  median     55.17  max        90
+         label_ang_rate_ca_deg_s: min    0.1728  median    0.3659  max     1.242
+         label_radial_vel_ca_mps: min    -151.5  median    -2.269  max     148.6
+                 label_eastbound: share of 1s 0.86
+                label_northbound: share of 1s 0.50
+               label_passes_east: share of 1s 0.50
+[2026-10-21 21:37:50]   done  sigma_1 / labels (0.0 min)
+[2026-10-21 21:37:50]   start sigma_1 / forests
+    8000 train / 2000 test satellites, 94 inputs
+    
+           lightgbm            label_alt_ca_km  (0.0 min)
+      random_forest            label_alt_ca_km  (0.9 min)
+           lightgbm          label_elev_ca_deg  (0.0 min)
+      random_forest          label_elev_ca_deg  (1.2 min)
+           lightgbm          label_az_fold_deg  (0.0 min)
+      random_forest          label_az_fold_deg  (1.6 min)
+           lightgbm    label_ang_rate_ca_deg_s  (0.0 min)
+      random_forest    label_ang_rate_ca_deg_s  (1.0 min)
+           lightgbm    label_radial_vel_ca_mps  (0.0 min)
+      random_forest    label_radial_vel_ca_mps  (1.3 min)
+           lightgbm            label_eastbound  (0.0 min)
+      random_forest            label_eastbound  (0.2 min)
+           lightgbm           label_northbound  (0.0 min)
+      random_forest           label_northbound  (0.2 min)
+           lightgbm          label_passes_east  (0.0 min)
+      random_forest          label_passes_east  (0.2 min)
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km       lightgbm      16.23     10.25     25.34   0.997     318.3 |
+               label_alt_ca_km  random_forest      18.78     11.33     29.44   0.997     318.3 |
+             label_elev_ca_deg       lightgbm      2.623     1.444     4.087   0.948     11.55 |
+             label_elev_ca_deg  random_forest      2.641     1.296     3.982   0.948     11.55 |
+             label_az_fold_deg       lightgbm      8.929     5.626      14.9   0.888     26.65 |
+             label_az_fold_deg  random_forest      8.258     4.909     13.53   0.904     26.65 |
+       label_ang_rate_ca_deg_s       lightgbm   0.004835  0.001405  0.004458   0.999    0.1825 |
+       label_ang_rate_ca_deg_s  random_forest   0.003366  0.001383  0.004159   1.000    0.1825 |
+       label_radial_vel_ca_mps       lightgbm      29.52     18.61     48.89   0.759     60.08 |
+       label_radial_vel_ca_mps  random_forest      30.86     19.67     51.21   0.736     60.08 |
+               label_eastbound       lightgbm                                                  |    0.952  0.853
+               label_eastbound  random_forest                                                  |    0.948  0.853
+              label_northbound       lightgbm                                                  |    0.499  0.507
+              label_northbound  random_forest                                                  |    0.499  0.507
+             label_passes_east       lightgbm                                                  |    0.610  0.516
+             label_passes_east  random_forest                                                  |    0.616  0.516
+    
+    Saved output/test_predictions_forest.csv and output/test_results_forest.csv
+[2026-10-21 21:44:43]   done  sigma_1 / forests (6.9 min)
+[2026-10-21 21:44:43]   start sigma_1 / cnn
+    8000 train / 2000 test satellites, input (2, 47), device cuda (Tesla T4)
+    
+      training 8 networks together on cuda (Tesla T4), 8000 satellites each
+        stage 1 (early stopping) epoch  100: 8 of 8 networks still training (1.5 min)
+        stage 1 (early stopping) epoch  200: 6 of 8 networks still training (3.0 min)
+        stage 1 (early stopping) epoch  300: 6 of 8 networks still training (4.5 min)
+        stage 1 (early stopping) epoch  400: 6 of 8 networks still training (5.9 min)
+        stage 1 (early stopping) epoch  500: 5 of 8 networks still training (7.4 min)
+        stage 1 (early stopping) epoch  600: 2 of 8 networks still training (8.9 min)
+        stage 1 (early stopping) epoch  700: 2 of 8 networks still training (10.4 min)
+        stage 1 (early stopping) epoch  800: 2 of 8 networks still training (11.8 min)
+        stage 1 (early stopping) epoch  900: 1 of 8 networks still training (13.3 min)
+        stage 1 (early stopping) epoch 1000: 1 of 8 networks still training (14.8 min)
+        stage 1 (early stopping) epoch 1015: 0 of 8 networks still training (15.0 min)
+        stage 2 (all training data) epoch  100: 6 of 8 networks still training (1.8 min)
+        stage 2 (all training data) epoch  200: 6 of 8 networks still training (3.6 min)
+        stage 2 (all training data) epoch  300: 6 of 8 networks still training (5.4 min)
+        stage 2 (all training data) epoch  400: 3 of 8 networks still training (7.3 min)
+        stage 2 (all training data) epoch  500: 2 of 8 networks still training (9.1 min)
+        stage 2 (all training data) epoch  600: 2 of 8 networks still training (10.9 min)
+        stage 2 (all training data) epoch  700: 1 of 8 networks still training (12.7 min)
+        stage 2 (all training data) epoch  800: 1 of 8 networks still training (14.5 min)
+        stage 2 (all training data) epoch  865: 0 of 8 networks still training (15.7 min)
+    
+    Training time: 30.7 min. Stopping epochs: label_alt_ca_km 379, label_elev_ca_deg 410, label_az_fold_deg 302, label_ang_rate_ca_deg_s 365, label_radial_vel_ca_mps 865, label_eastbound 683, label_northbound 35, label_passes_east 3
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km            cnn      14.23     9.974     22.49   0.998     318.3 |
+             label_elev_ca_deg            cnn      2.307     1.249      3.59   0.960     11.55 |
+             label_az_fold_deg            cnn      7.227     4.538     11.88   0.926     26.65 |
+       label_ang_rate_ca_deg_s            cnn   0.002126  0.001127  0.003396   1.000    0.1825 |
+       label_radial_vel_ca_mps            cnn      28.44     18.57      46.2   0.776     60.08 |
+               label_eastbound            cnn                                                  |    0.959  0.853
+              label_northbound            cnn                                                  |    0.498  0.507
+             label_passes_east            cnn                                                  |    0.478  0.516
+    
+    Saved output/test_predictions_cnn.csv, output/test_results_cnn.csv and the models
+[2026-10-21 22:15:27]   done  sigma_1 / cnn (30.7 min)
+[2026-10-21 22:15:27] === noise level 2.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_2
+[2026-10-21 22:15:27]   start sigma_2 / add_noise
+    sigma = 2.0 m/s (delta_t = 0.001 s, seed = 2024): noise added to 10000 of 10000 satellites -> output
+[2026-10-21 22:15:29]   done  sigma_2 / add_noise (0.0 min)
+[2026-10-21 22:15:29]   start sigma_2 / build_dataset
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-21 22:15:40]   done  sigma_2 / build_dataset (0.2 min)
+[2026-10-21 22:15:40]   start sigma_2 / labels
+    10000 satellites (0 without a closest approach dropped), 94 inputs, 8 labels -> output/training_table_ca.csv
+                 label_alt_ca_km: min     330.9  median     939.9  max      1631
+               label_elev_ca_deg: min     39.58  median     54.92  max     89.79
+               label_az_fold_deg: min  0.004909  median     55.17  max        90
+         label_ang_rate_ca_deg_s: min    0.1728  median    0.3659  max     1.242
+         label_radial_vel_ca_mps: min    -151.5  median    -2.269  max     148.6
+                 label_eastbound: share of 1s 0.86
+                label_northbound: share of 1s 0.50
+               label_passes_east: share of 1s 0.50
+[2026-10-21 22:15:42]   done  sigma_2 / labels (0.0 min)
+[2026-10-21 22:15:42]   start sigma_2 / forests
+    8000 train / 2000 test satellites, 94 inputs
+    
+           lightgbm            label_alt_ca_km  (0.0 min)
+      random_forest            label_alt_ca_km  (0.9 min)
+           lightgbm          label_elev_ca_deg  (0.0 min)
+      random_forest          label_elev_ca_deg  (1.2 min)
+           lightgbm          label_az_fold_deg  (0.0 min)
+      random_forest          label_az_fold_deg  (1.5 min)
+           lightgbm    label_ang_rate_ca_deg_s  (0.0 min)
+      random_forest    label_ang_rate_ca_deg_s  (1.0 min)
+           lightgbm    label_radial_vel_ca_mps  (0.0 min)
+      random_forest    label_radial_vel_ca_mps  (1.3 min)
+           lightgbm            label_eastbound  (0.0 min)
+      random_forest            label_eastbound  (0.2 min)
+           lightgbm           label_northbound  (0.0 min)
+      random_forest           label_northbound  (0.2 min)
+           lightgbm          label_passes_east  (0.0 min)
+      random_forest          label_passes_east  (0.2 min)
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km       lightgbm      16.54     10.81     25.98   0.997     318.3 |
+               label_alt_ca_km  random_forest      18.76      11.4     29.48   0.997     318.3 |
+             label_elev_ca_deg       lightgbm      2.589     1.463     4.164   0.950     11.55 |
+             label_elev_ca_deg  random_forest      2.645     1.315     3.979   0.948     11.55 |
+             label_az_fold_deg       lightgbm       9.01     5.783     14.69   0.886     26.65 |
+             label_az_fold_deg  random_forest      8.261     4.938     13.64   0.904     26.65 |
+       label_ang_rate_ca_deg_s       lightgbm   0.004886  0.001502  0.004422   0.999    0.1825 |
+       label_ang_rate_ca_deg_s  random_forest   0.003444  0.001466  0.004372   1.000    0.1825 |
+       label_radial_vel_ca_mps       lightgbm      30.69     19.98     50.12   0.739     60.08 |
+       label_radial_vel_ca_mps  random_forest      32.01     20.23     52.68   0.716     60.08 |
+               label_eastbound       lightgbm                                                  |    0.949  0.853
+               label_eastbound  random_forest                                                  |    0.949  0.853
+              label_northbound       lightgbm                                                  |    0.498  0.507
+              label_northbound  random_forest                                                  |    0.503  0.507
+             label_passes_east       lightgbm                                                  |    0.621  0.516
+             label_passes_east  random_forest                                                  |    0.609  0.516
+    
+    Saved output/test_predictions_forest.csv and output/test_results_forest.csv
+[2026-10-21 22:22:19]   done  sigma_2 / forests (6.6 min)
+[2026-10-21 22:22:19]   start sigma_2 / cnn
+    8000 train / 2000 test satellites, input (2, 47), device cuda (Tesla T4)
+    
+      training 8 networks together on cuda (Tesla T4), 8000 satellites each
+        stage 1 (early stopping) epoch  100: 8 of 8 networks still training (1.4 min)
+        stage 1 (early stopping) epoch  200: 6 of 8 networks still training (2.9 min)
+        stage 1 (early stopping) epoch  300: 6 of 8 networks still training (4.3 min)
+        stage 1 (early stopping) epoch  400: 6 of 8 networks still training (5.8 min)
+        stage 1 (early stopping) epoch  500: 4 of 8 networks still training (7.2 min)
+        stage 1 (early stopping) epoch  600: 3 of 8 networks still training (8.6 min)
+        stage 1 (early stopping) epoch  700: 2 of 8 networks still training (10.0 min)
+        stage 1 (early stopping) epoch  800: 1 of 8 networks still training (11.5 min)
+        stage 1 (early stopping) epoch  900: 1 of 8 networks still training (12.9 min)
+        stage 1 (early stopping) epoch 1000: 1 of 8 networks still training (14.3 min)
+        stage 1 (early stopping) epoch 1086: 0 of 8 networks still training (15.6 min)
+        stage 2 (all training data) epoch  100: 6 of 8 networks still training (1.8 min)
+        stage 2 (all training data) epoch  200: 6 of 8 networks still training (3.7 min)
+        stage 2 (all training data) epoch  300: 6 of 8 networks still training (5.4 min)
+        stage 2 (all training data) epoch  400: 3 of 8 networks still training (7.2 min)
+        stage 2 (all training data) epoch  500: 3 of 8 networks still training (9.0 min)
+        stage 2 (all training data) epoch  600: 2 of 8 networks still training (10.8 min)
+        stage 2 (all training data) epoch  700: 1 of 8 networks still training (12.6 min)
+        stage 2 (all training data) epoch  800: 1 of 8 networks still training (14.3 min)
+        stage 2 (all training data) epoch  900: 1 of 8 networks still training (16.1 min)
+        stage 2 (all training data) epoch  936: 0 of 8 networks still training (16.7 min)
+    
+    Training time: 32.3 min. Stopping epochs: label_alt_ca_km 515, label_elev_ca_deg 320, label_az_fold_deg 647, label_ang_rate_ca_deg_s 311, label_radial_vel_ca_mps 936, label_eastbound 392, label_northbound 35, label_passes_east 2
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km            cnn      13.96     9.728     22.44   0.998     318.3 |
+             label_elev_ca_deg            cnn        2.2     1.154     3.532   0.964     11.55 |
+             label_az_fold_deg            cnn      7.892     4.964     13.13   0.912     26.65 |
+       label_ang_rate_ca_deg_s            cnn   0.003029  0.002099  0.004793   1.000    0.1825 |
+       label_radial_vel_ca_mps            cnn      32.87     21.86     53.02   0.701     60.08 |
+               label_eastbound            cnn                                                  |    0.943  0.853
+              label_northbound            cnn                                                  |    0.503  0.507
+             label_passes_east            cnn                                                  |    0.483  0.516
+    
+    Saved output/test_predictions_cnn.csv, output/test_results_cnn.csv and the models
+[2026-10-21 22:54:45]   done  sigma_2 / cnn (32.4 min)
+[2026-10-21 22:54:45] === noise level 4.0 m/s -> /content/drive/MyDrive/teaching/Spring2026Courses/projects/Raeez/Code/V3 V4/Trajectory_GPU_v2/sweep/sigma_4
+[2026-10-21 22:54:45]   start sigma_4 / add_noise
+    sigma = 4.0 m/s (delta_t = 0.001 s, seed = 2024): noise added to 10000 of 10000 satellites -> output
+[2026-10-21 22:54:46]   done  sigma_4 / add_noise (0.0 min)
+[2026-10-21 22:54:46]   start sigma_4 / build_dataset
+    Loaded 10000 satellites from output/delay_differences.csv
+      dropped     0 with no pass at all
+      dropped     0 flagged non-contiguous
+      dropped     0 with fewer than 4 real samples
+      dropped     0 with no zero crossing found
+      10000 satellites remain in the training table
+    
+    K_before = 24  (crossing sits at column index 23)
+    K_after  = 23
+    L        = 47  (total rr_c_* / mask_* columns)
+    
+    Labels (6): ['label_sma_m', 'label_ecc', 'label_inc_deg', 'label_raan_deg', 'label_argp_deg', 'label_anom_deg']
+    Mean fraction of real (non-padded) samples per row: 60.9%
+    
+    Training table saved to output/training_table_padded.csv
+[2026-10-21 22:54:57]   done  sigma_4 / build_dataset (0.2 min)
+[2026-10-21 22:54:57]   start sigma_4 / labels
+    10000 satellites (0 without a closest approach dropped), 94 inputs, 8 labels -> output/training_table_ca.csv
+                 label_alt_ca_km: min     330.9  median     939.9  max      1631
+               label_elev_ca_deg: min     39.58  median     54.92  max     89.79
+               label_az_fold_deg: min  0.004909  median     55.17  max        90
+         label_ang_rate_ca_deg_s: min    0.1728  median    0.3659  max     1.242
+         label_radial_vel_ca_mps: min    -151.5  median    -2.269  max     148.6
+                 label_eastbound: share of 1s 0.86
+                label_northbound: share of 1s 0.50
+               label_passes_east: share of 1s 0.50
+[2026-10-21 22:55:00]   done  sigma_4 / labels (0.0 min)
+[2026-10-21 22:55:00]   start sigma_4 / forests
+    8000 train / 2000 test satellites, 94 inputs
+    
+           lightgbm            label_alt_ca_km  (0.0 min)
+      random_forest            label_alt_ca_km  (0.9 min)
+           lightgbm          label_elev_ca_deg  (0.0 min)
+      random_forest          label_elev_ca_deg  (1.1 min)
+           lightgbm          label_az_fold_deg  (0.0 min)
+      random_forest          label_az_fold_deg  (1.6 min)
+           lightgbm    label_ang_rate_ca_deg_s  (0.0 min)
+      random_forest    label_ang_rate_ca_deg_s  (1.0 min)
+           lightgbm    label_radial_vel_ca_mps  (0.0 min)
+      random_forest    label_radial_vel_ca_mps  (1.3 min)
+           lightgbm            label_eastbound  (0.0 min)
+      random_forest            label_eastbound  (0.2 min)
+           lightgbm           label_northbound  (0.0 min)
+      random_forest           label_northbound  (0.2 min)
+           lightgbm          label_passes_east  (0.0 min)
+      random_forest          label_passes_east  (0.2 min)
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km       lightgbm      16.43     10.97     25.33   0.997     318.3 |
+               label_alt_ca_km  random_forest      18.68     11.25     29.17   0.997     318.3 |
+             label_elev_ca_deg       lightgbm      2.614     1.435     3.991   0.949     11.55 |
+             label_elev_ca_deg  random_forest      2.658     1.309     4.016   0.947     11.55 |
+             label_az_fold_deg       lightgbm      9.117     5.665     14.93   0.883     26.65 |
+             label_az_fold_deg  random_forest      8.282     4.941     13.84   0.903     26.65 |
+       label_ang_rate_ca_deg_s       lightgbm   0.004958  0.001674  0.004696   0.999    0.1825 |
+       label_ang_rate_ca_deg_s  random_forest   0.003523   0.00153  0.004538   1.000    0.1825 |
+       label_radial_vel_ca_mps       lightgbm      32.07     20.54      53.1   0.715     60.08 |
+       label_radial_vel_ca_mps  random_forest      33.72     21.56     55.92   0.685     60.08 |
+               label_eastbound       lightgbm                                                  |    0.948  0.853
+               label_eastbound  random_forest                                                  |    0.950  0.853
+              label_northbound       lightgbm                                                  |    0.518  0.507
+              label_northbound  random_forest                                                  |    0.512  0.507
+             label_passes_east       lightgbm                                                  |    0.606  0.516
+             label_passes_east  random_forest                                                  |    0.611  0.516
+    
+    Saved output/test_predictions_forest.csv and output/test_results_forest.csv
+[2026-10-21 23:01:36]   done  sigma_4 / forests (6.6 min)
+[2026-10-21 23:01:36]   start sigma_4 / cnn
+    8000 train / 2000 test satellites, input (2, 47), device cuda (Tesla T4)
+    
+      training 8 networks together on cuda (Tesla T4), 8000 satellites each
+        stage 1 (early stopping) epoch  100: 8 of 8 networks still training (1.5 min)
+        stage 1 (early stopping) epoch  200: 6 of 8 networks still training (2.9 min)
+        stage 1 (early stopping) epoch  300: 5 of 8 networks still training (4.4 min)
+        stage 1 (early stopping) epoch  400: 3 of 8 networks still training (5.8 min)
+        stage 1 (early stopping) epoch  500: 3 of 8 networks still training (7.3 min)
+        stage 1 (early stopping) epoch  600: 3 of 8 networks still training (8.7 min)
+        stage 1 (early stopping) epoch  700: 2 of 8 networks still training (10.2 min)
+        stage 1 (early stopping) epoch  800: 1 of 8 networks still training (11.7 min)
+        stage 1 (early stopping) epoch  900: 1 of 8 networks still training (13.1 min)
+        stage 1 (early stopping) epoch 1000: 1 of 8 networks still training (14.6 min)
+        stage 1 (early stopping) epoch 1100: 1 of 8 networks still training (16.0 min)
+        stage 1 (early stopping) epoch 1200: 1 of 8 networks still training (17.5 min)
+        stage 1 (early stopping) epoch 1300: 1 of 8 networks still training (18.9 min)
+        stage 1 (early stopping) epoch 1400: 1 of 8 networks still training (20.3 min)
+        stage 1 (early stopping) epoch 1500: 0 of 8 networks still training (21.8 min)
+        stage 2 (all training data) epoch  100: 5 of 8 networks still training (1.8 min)
+        stage 2 (all training data) epoch  200: 4 of 8 networks still training (3.6 min)
+        stage 2 (all training data) epoch  300: 3 of 8 networks still training (5.4 min)
+        stage 2 (all training data) epoch  400: 3 of 8 networks still training (7.2 min)
+        stage 2 (all training data) epoch  500: 3 of 8 networks still training (8.9 min)
+        stage 2 (all training data) epoch  600: 2 of 8 networks still training (10.7 min)
+        stage 2 (all training data) epoch  700: 1 of 8 networks still training (12.5 min)
+        stage 2 (all training data) epoch  800: 1 of 8 networks still training (14.3 min)
+        stage 2 (all training data) epoch  900: 1 of 8 networks still training (16.1 min)
+        stage 2 (all training data) epoch 1000: 1 of 8 networks still training (17.9 min)
+        stage 2 (all training data) epoch 1100: 1 of 8 networks still training (19.7 min)
+        stage 2 (all training data) epoch 1200: 1 of 8 networks still training (21.5 min)
+        stage 2 (all training data) epoch 1300: 1 of 8 networks still training (23.3 min)
+        stage 2 (all training data) epoch 1350: 0 of 8 networks still training (24.1 min)
+    
+    Training time: 45.9 min. Stopping epochs: label_alt_ca_km 541, label_elev_ca_deg 98, label_az_fold_deg 233, label_ang_rate_ca_deg_s 190, label_radial_vel_ca_mps 1350, label_eastbound 645, label_northbound 33, label_passes_east 2
+    
+                        target          model       RMSE    median       p90      R2     guess | accuracy  guess
+    --------------------------------------------------------------------------------------------------------------
+               label_alt_ca_km            cnn      14.41     10.17      23.7   0.998     318.3 |
+             label_elev_ca_deg            cnn      2.334     1.228     3.631   0.959     11.55 |
+             label_az_fold_deg            cnn      8.293     5.671     13.59   0.903     26.65 |
+       label_ang_rate_ca_deg_s            cnn   0.003802  0.002506  0.005915   1.000    0.1825 |
+       label_radial_vel_ca_mps            cnn      30.29     19.45     49.02   0.746     60.08 |
+               label_eastbound            cnn                                                  |    0.952  0.853
+              label_northbound            cnn                                                  |    0.494  0.507
+             label_passes_east            cnn                                                  |    0.483  0.516
+    
+    Saved output/test_predictions_cnn.csv, output/test_results_cnn.csv and the models
+[2026-10-21 23:47:37]   done  sigma_4 / cnn (46.0 min)
+    wrote results_summary.csv (120 rows)
+    wrote results.png
+    wrote results_vs_noise.png
+[2026-10-21 23:47:41] ALL DONE in 2.81 h. 0.0: ok, 0.5: ok, 1.0: ok, 2.0: ok, 4.0: ok
